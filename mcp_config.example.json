@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mcp-diagrama-iterativo-mermaid": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "D:/2026/MCP-Diagrama-Iterativo-Mermaid",
+        "server.py"
+      ],
+      "disabled": false
+    }
+  }
+}

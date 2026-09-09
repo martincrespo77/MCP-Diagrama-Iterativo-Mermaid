@@ -1,0 +1,13 @@
+[project]
+name = "mcp-diagrama-iterativo-mermaid"
+version = "0.1.0"
+description = "Servidor MCP para analisis de proyectos y compilacion de diagramas interactivos autonomos (HTML5 + SVG + JS, 100% Air-Gapped)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+mcp-diagrama = "server:main"
