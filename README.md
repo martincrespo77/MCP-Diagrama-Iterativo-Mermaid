@@ -8,18 +8,28 @@ Servidor MCP (Model Context Protocol) diseñado para que cualquier Asistente de 
 
 1. **100% Air-Gapped (Cero Internet, Cero CDN, Cero NPM en el visor):**
    - El archivo `.html` resultante es un artefacto autónomo y portable que se puede abrir con doble clic en cualquier máquina o red militar/bancaria aislada.
-2. **Matemática Vectorial SVG Perimétrica:**
-   - Calcula el ángulo de incidencia $\theta = \operatorname{atan2}(\Delta y, \Delta x)$ para proyectar las flechas sobre el perímetro exterior exacto de cada tarjeta, evitando que se superpongan sobre los nodos.
-   - Curvas de Bézier cúbicas con curvatura horizontal adaptativa.
-3. **Interactividad Completa:**
-   - **Arrastrar y soltar (Drag & Drop)** de nodos con recálculo fluido instantáneo de conexiones.
-   - **Paneo libre** en lienzo infinito y **Zoom**.
-   - **Minimapa** con visor de coordenadas en tiempo real.
-   - **Búsqueda en vivo** que resalta coincidencias y atenúa el resto.
-   - **Filtros por capa/subgrafo**.
-   - **Modal de inspección técnica** al hacer clic sobre cualquier componente (responsabilidades, archivos de código, dependencias entrantes y salientes).
-4. **Inspección Automática de Proyectos:**
-   - Escanea la estructura de carpetas de cualquier repositorio (.NET, React, Python, Java, Go, etc.) y sintetiza su diagrama de componentes o convierte diagramas Mermaid (`.mmd`) ya existentes.
+2. **Modo Enfoque y Trazabilidad Inteligente (Cero Ruido Visual):**
+   - **Hover / Clic sobre Nodo:** al interactuar con cualquier componente, se atenúan todas las conexiones ajenas (reduciendo el 95% del ruido visual) y se iluminan en alta fidelidad sus conexiones **Entrantes** (verde esmeralda) y **Salientes** (ámbar/oro).
+   - **Fijación de Enfoque (Focus Lock):** un clic fija el foco en el componente seleccionado para mover el cursor, inspeccionar rutas y leer etiquetas sin perder la vista activa. Se libera con `Esc` o el botón de la barra flotante.
+3. **Gestión Inteligente de Etiquetas (Sin Amontonamiento):**
+   - Selector en barra superior con 4 modos: `Inteligente (Foco/Hover)`, `Todas`, `Principales (==>)` y `Ocultas`.
+   - **Tooltip Flotante de Aristas:** al posar el cursor sobre cualquier enlace, se resalta en neón y se despliega un panel flotante con los extremos exactos `[Origen ➔ Destino]`, el tipo de conexión y la descripción completa (rutas HTTP, permisos, roles, etc.).
+4. **Filtros Semánticos de Enlaces:**
+   - Botones tipo chip en la barra superior para alternar instantáneamente la visibilidad de capas de conexión:
+     - `==> Flujo Principal` (transiciones troncales del sistema)
+     - `--> Métodos / Transiciones` (llamadas de operación estándar)
+     - `-.- > Reglas / Guardas / Auditoría` (guardas, permisos, eventos)
+5. **Enrutamiento Curvo Avanzado y Auto-bucles (Self-Loops):**
+   - Soporte matemático completo para auto-bucles: proyecta arcos suaves en el lateral del nodo con etiqueta exterior.
+   - Enrutamiento arqueado para conexiones de retorno (Right-to-Left) evitando colisiones con columnas intermedias.
+   - Separación con *offsets* para conexiones paralelas entre los mismos nodos.
+6. **Soporte Completo de Sintaxis Mermaid:**
+   - Soporta rectángulos `[...]`, píldoras `([...])`, cilindros `[(...)]`, rombos de decisión `{...}`, hexágonos `{{...}}` y círculos `((...))`.
+   - Soporte para definición de estilos con `classDef` y asignaciones con `class`.
+7. **Navegación Fluida con Zoom y Paneo:**
+   - Zoom con la rueda del ratón centrado en la posición del cursor.
+   - Botones de Zoom en pantalla: `[ + ]`, `[ - ]`, `[ 100% ]`, `[ ⛶ Ajustar ]`.
+   - Drag & drop de nodos con recálculo en tiempo real y minimapa reactivo.
 
 ---
 

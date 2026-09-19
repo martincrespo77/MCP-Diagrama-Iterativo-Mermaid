@@ -2,49 +2,87 @@ import re
 from typing import Dict, List, Tuple, Any
 
 class MermaidParser:
-    """Parser robusto para extraer nodos, aristas y subgrafos de texto Mermaid."""
+    """Parser robusto para extraer nodos, aristas, subgrafos y estilos de texto Mermaid."""
 
     def __init__(self):
-        # Regex para nodos con diferentes formas: [rect], (round), ([pill]), [(cylinder)], ((circle))
+        # Regex para nodos con diferentes formas (ordenados por especificidad para evitar falsos positivos)
         self.re_node_shapes = [
-            (re.compile(r'([A-Za-z0-9_.-]+)\(\["(.*?)"\]\)'), "pill"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\(\(\"(.*?)\"\)\)\)'), "circle"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\(\((.*?)\)\)\)'), "circle"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\(\"(.*?)\"\)\)'), "circle"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\((.*?)\)\)'), "circle"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\[\"(.*?)\"\]\)'), "pill"),
             (re.compile(r'([A-Za-z0-9_.-]+)\(\[(.*?)\]\)'), "pill"),
-            (re.compile(r'([A-Za-z0-9_.-]+)\[\("(.*?)"\)\]'), "cylinder"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\[\(\"(.*?)\"\)\]'), "cylinder"),
             (re.compile(r'([A-Za-z0-9_.-]+)\[\((.*?)\)\]'), "cylinder"),
-            (re.compile(r'([A-Za-z0-9_.-]+)\[/"(.*?)"/\]'), "parallelogram"),
-            (re.compile(r'([A-Za-z0-9_.-]+)\[/(.*?)/\]'), "parallelogram"),
-            (re.compile(r'([A-Za-z0-9_.-]+)\["(.*?)"\]'), "rect"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\{\{\"(.*?)\"\}\}'), "hexagon"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\{\{(.*?)\}\}'), "hexagon"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\{\"(.*?)\"\}'), "diamond"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\{(.*?)\}'), "diamond"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\[\/\"(.*?)\"\/\]'), "parallelogram"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\[\/(.*?)\/\]'), "parallelogram"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\[\"(.*?)\"\]'), "rect"),
             (re.compile(r'([A-Za-z0-9_.-]+)\[(.*?)\]'), "rect"),
-            (re.compile(r'([A-Za-z0-9_.-]+)\("(.*?)"\)'), "round"),
+            (re.compile(r'([A-Za-z0-9_.-]+)\(\"(.*?)\"\)'), "round"),
             (re.compile(r'([A-Za-z0-9_.-]+)\((.*?)\)'), "round"),
         ]
 
         # Regex para aristas / conectores con labels
         self.re_arrow_labeled = re.compile(
-            r'([A-Za-z0-9_.-]+)\s*(?:-->|---\s*\||-.->\||==>\||-->\|)(.*?)\|\s*([A-Za-z0-9_.-]+)'
+            r'([A-Za-z0-9_.-]+)\s*(?:==>\||-->\||-\.->\||---\s*\|)\s*\"?(.*?)\"?\|\s*([A-Za-z0-9_.-]+)'
         )
         self.re_arrow_inline = re.compile(
-            r'([A-Za-z0-9_.-]+)\s*--\s*(.*?)\s*-->\s*([A-Za-z0-9_.-]+)'
+            r'([A-Za-z0-9_.-]+)\s*(?:--|-\.-|==)\s*\"?(.*?)\"?\s*(?:-->|-\.->|==>)\s*([A-Za-z0-9_.-]+)'
         )
         self.re_arrow_simple = re.compile(
-            r'([A-Za-z0-9_.-]+)\s*(-->|-.->|==>|---)\s*([A-Za-z0-9_.-]+)'
+            r'([A-Za-z0-9_.-]+)\s*(==>|-\.->|-->|---)\s*([A-Za-z0-9_.-]+)'
         )
 
         # Regex para subgrafos
         self.re_subgraph_start = re.compile(r'^\s*subgraph\s+([A-Za-z0-9_.-]+)(?:\["?(.*?)"?\])?\s*$', re.I)
         self.re_subgraph_end = re.compile(r'^\s*end\s*$', re.I)
 
+        # Regex para classDef y asignaciones de clase en Mermaid
+        self.re_class_def = re.compile(r'^\s*classDef\s+([A-Za-z0-9_.-]+)\s+(.*)$', re.I)
+        self.re_class_assign = re.compile(r'^\s*class\s+([A-Za-z0-9_.,-]+)\s+([A-Za-z0-9_.-]+)\s*$', re.I)
+
     def parse(self, text: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
         nodes: Dict[str, Any] = {}
         connections: List[Dict[str, Any]] = []
         subgraphs: Dict[str, Any] = {}
+        class_defs: Dict[str, Dict[str, str]] = {}
+        node_classes: Dict[str, str] = {}
 
         current_subgraph = None
         lines = text.splitlines()
 
         for raw_line in lines:
             line = raw_line.strip()
-            if not line or line.startswith("%%") or line.startswith("graph ") or line.startswith("flowchart "):
+            if not line or line.startswith("%%") or line.startswith("graph ") or line.startswith("flowchart ") or line.startswith("direction "):
+                continue
+
+            # Detectar definiciones de estilos classDef
+            m_cdef = self.re_class_def.match(line)
+            if m_cdef:
+                c_name = m_cdef.group(1)
+                c_props = m_cdef.group(2)
+                style: Dict[str, str] = {}
+                fill_m = re.search(r'fill:([#A-Za-z0-9]+)', c_props)
+                if fill_m: style['bg'] = fill_m.group(1)
+                stroke_m = re.search(r'stroke:([#A-Za-z0-9]+)', c_props)
+                if stroke_m: style['border'] = stroke_m.group(1)
+                color_m = re.search(r'color:([#A-Za-z0-9]+)', c_props)
+                if color_m: style['text'] = color_m.group(1)
+                class_defs[c_name] = style
+                continue
+
+            # Detectar asignación de clases: class node1,node2 miClase
+            m_cassign = self.re_class_assign.match(line)
+            if m_cassign:
+                target_nodes = [x.strip() for x in m_cassign.group(1).split(",") if x.strip()]
+                c_name = m_cassign.group(2).strip()
+                for tn in target_nodes:
+                    node_classes[tn] = c_name
                 continue
 
             # Subgrafos
@@ -68,10 +106,10 @@ class MermaidParser:
             found_node = False
             for regex, shape in self.re_node_shapes:
                 m = regex.search(line)
-                if m and "-->" not in line and "-.->" not in line:
+                if m and "-->" not in line and "-.->" not in line and "==>" not in line and "---" not in line:
                     n_id = m.group(1)
                     raw_label = m.group(2)
-                    clean_title = raw_label.replace("<br/>", " - ").replace("<br>", " - ").strip()
+                    clean_title = raw_label.replace("<br/>", " · ").replace("<br>", " · ").strip()
                     nodes[n_id] = {
                         "id": n_id,
                         "title": clean_title,
@@ -84,9 +122,17 @@ class MermaidParser:
                     found_node = True
                     break
 
-            # Buscar conexiones múltiples con & (ej. A --> B & C & D)
+            if found_node:
+                continue
+
+            # Buscar conexiones
             if "-->" in line or "-.->" in line or "==>" in line or "---" in line:
                 self._parse_connection_line(line, nodes, connections, current_subgraph)
+
+        # Aplicar clases de estilo a los nodos
+        for nid, cname in node_classes.items():
+            if nid in nodes and cname in class_defs:
+                nodes[nid]["custom_style"] = class_defs[cname]
 
         # Garantizar que todos los nodos mencionados en conexiones existan
         for conn in connections:
@@ -103,9 +149,8 @@ class MermaidParser:
         return nodes, connections, subgraphs
 
     def _parse_connection_line(self, line: str, nodes: dict, connections: list, current_subgraph: str):
-        # Manejo de labels con pipes |label|
         label = ""
-        arrow_type = "call"
+        arrow_type = "arrow"
 
         if "-.->" in line:
             arrow_type = "dashed"
@@ -132,22 +177,27 @@ class MermaidParser:
             self._add_connections_multi(from_part, to_part, arrow_type, label, connections)
             return
 
-        # Separador básico
+        m_simple = self.re_arrow_simple.search(line)
+        if m_simple:
+            from_part = m_simple.group(1)
+            to_part = m_simple.group(3)
+            self._add_connections_multi(from_part, to_part, arrow_type, "", connections)
+            return
+
         parts = re.split(r'\s*(?:-->|-.->|==>|---)\s*', line)
         if len(parts) == 2:
             from_part, to_part = parts[0].strip(), parts[1].strip()
             self._add_connections_multi(from_part, to_part, arrow_type, "", connections)
 
     def _add_connections_multi(self, from_str: str, to_str: str, arrow_type: str, label: str, connections: list):
-        # Permite syntax como A & B --> C & D
+        # Soporte para sintaxis múltiple con & (ej: A & B --> C & D)
         from_nodes = [x.strip() for x in from_str.split("&") if x.strip()]
         to_nodes = [x.strip() for x in to_str.split("&") if x.strip()]
 
         for f in from_nodes:
-            # Limpiar posible label inline o brackets
-            f_clean = re.sub(r'[\(\[\{].*?[\)\]\}]', '', f).strip()
+            f_clean = re.sub(r'[\(\[\{\}].*?[\)\]\}]', '', f).strip()
             for t in to_nodes:
-                t_clean = re.sub(r'[\(\[\{].*?[\)\]\}]', '', t).strip()
+                t_clean = re.sub(r'[\(\[\{\}].*?[\)\]\}]', '', t).strip()
                 if f_clean and t_clean:
                     connections.append({
                         "from": f_clean,
