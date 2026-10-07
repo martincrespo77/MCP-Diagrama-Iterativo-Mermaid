@@ -85,5 +85,15 @@ Una vez configurado, puedes hablarle a tu IA directamente así:
 
 ---
 
+
+---
+
+## 📂 Galería de Ejemplos
+En la carpeta [examples/](examples/) se incluye una suite interactiva de demostración completa (diagrama_suite_unificada.html) que integra:
+- **Multidiagrama por pestañas:** Casos de uso, Flujos de procesos, Secuencias UML y Diagramas de clases.
+- **Simulador de caminos y escenarios:** Resaltado interactivo de flujos y trazabilidad hacia casos de prueba.
+- **Motor 100% Air-Gapped:** Autonomía total sin CDNs externos.
+- **Interacción dinámica:** Arrastre libre de componentes (Drag & Drop), buscador en tiempo real (Ctrl+K), minimapa reactivo y modo enfoque de dependencias (tracing).
+
 ## 📄 Licencia
 MIT — Desarrollado para ecosistemas de desarrollo asistido por IA de alta fidelidad técnica.
