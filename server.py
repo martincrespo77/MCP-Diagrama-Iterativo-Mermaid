@@ -1,5 +1,5 @@
-from pathlib import Path
-from typing import Optional, Dict, Any
+﻿from pathlib import Path
+from typing import Optional, Dict, Any, List
 
 try:
     from mcp.server.mcpserver import MCPServer as FastMCP
@@ -10,12 +10,13 @@ from core.parser import MermaidParser
 from core.layout import SpatialLayoutEngine
 from core.bundler import SingleFileBundler
 from core.scanner import CodebaseScanner
+from core.suite_bundler import UnifiedSuiteBundler
 
 
 # Instancia FastMCP / MCPServer
 mcp = FastMCP(
     "MCP-Diagrama-Iterativo-Mermaid",
-    instructions="Servidor MCP para inspeccion de proyectos y generacion de diagramas interactivos autonomos (HTML5 + SVG + JS, 100% Air-Gapped)."
+    instructions="Servidor MCP para inspeccion de proyectos y generacion de diagramas interactivos autonomos y suites unificadas (HTML5 + SVG + JS, 100% Air-Gapped)."
 )
 
 
@@ -23,6 +24,7 @@ parser = MermaidParser()
 layout_engine = SpatialLayoutEngine()
 bundler = SingleFileBundler()
 scanner = CodebaseScanner()
+suite_bundler = UnifiedSuiteBundler()
 
 @mcp.tool()
 def analizar_proyecto(project_path: str) -> dict:
@@ -65,6 +67,51 @@ def generar_diagrama_desde_mermaid(mermaid_code: str, output_path: str, titulo: 
     return f"Diagrama interactivo generado exitosamente en: {str(out_file)} ({len(node_list)} nodos, {len(connections)} conexiones)"
 
 @mcp.tool()
+def generar_suite_unificada(
+    titulo: str,
+    output_path: str,
+    eyebrow: str = "Suite Unificada de Arquitectura",
+    casos_de_uso: Optional[Dict[str, Any]] = None,
+    flujos: Optional[Dict[str, Any]] = None,
+    capas: Optional[Dict[str, Any]] = None,
+    clases: Optional[List[Dict[str, Any]]] = None,
+    aristas_clases: Optional[List[List[Any]]] = None,
+    secuencias: Optional[Dict[str, Any]] = None,
+) -> str:
+    """
+    Genera una Suite Unificada Completa (Multi-pestaña: Casos de Uso, Flujos de Proceso,
+    Secuencia UML y Clases/Arquitectura por Capas) con buscador en tiempo real (Ctrl+K),
+    panel lateral de detalles, minimapa, modo enfoque de dependencias (tracing) y 100% Air-Gapped.
+
+    Args:
+        titulo: Título principal de la aplicación o proyecto.
+        output_path: Ruta absoluta al archivo .html resultante.
+        eyebrow: Texto superior informativo (ej: 'SECCAP · FIE 2026 · Versión 1.0').
+        casos_de_uso: Diccionario {'actors': [...], 'cases': [...], 'edges': [...]}.
+        flujos: Diccionario {'clave': {'title': ..., 'nodes': [...], 'edges': [...], 'scenarios': [...]}}.
+        capas: Diccionario de capas {'web': {'label': '...', 'long': '...'}, ...}.
+        clases: Lista de componentes/clases [{'id': ..., 'layer': ..., 'pkg': ..., 'st': ..., 'attrs': [...], 'meths': [...], 'desc': ..., 'refs': [...]}].
+        aristas_clases: Lista de conexiones entre clases [['origen', 'destino', 'relacion']].
+        secuencias: Diccionario de secuencias {'clave': {'title': ..., 'parts': [...], 'steps': [...]}}.
+    """
+    html_bundle = suite_bundler.bundle(
+        titulo=titulo,
+        eyebrow=eyebrow,
+        casos_de_uso=casos_de_uso or {"actors": [], "cases": [], "edges": []},
+        flujos=flujos or {},
+        capas=capas or {},
+        clases=clases or [],
+        aristas_clases=aristas_clases or [],
+        secuencias=secuencias or {},
+    )
+
+    out_file = Path(output_path).resolve()
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(html_bundle, encoding="utf-8")
+
+    return f"Suite Unificada interactiva generada exitosamente en: {str(out_file)} ({len(clases or [])} componentes, {len(flujos or {})} flujos, {len(secuencias or {})} secuencias)"
+
+@mcp.tool()
 def crear_diagrama_proyecto(project_path: str, output_path: str = "", titulo: str = "") -> str:
     """
     Herramienta integral 'Todo en Uno':
@@ -78,9 +125,8 @@ def crear_diagrama_proyecto(project_path: str, output_path: str = "", titulo: st
     """
     scan_info = scanner.scan(project_path)
     proj_name = scan_info["project_name"]
-    final_title = titulo or f"Arquitectura de Componentes — {proj_name}"
+    final_title = titulo or f"Arquitectura de Componentes · {proj_name}"
 
-    # Si el proyecto ya tiene un diagrama mmd en docs, lo priorizamos
     mermaid_code = ""
     if scan_info["existing_diagrams"]:
         for d in scan_info["existing_diagrams"]:
@@ -90,10 +136,8 @@ def crear_diagrama_proyecto(project_path: str, output_path: str = "", titulo: st
                 break
 
     if not mermaid_code:
-        # Generar arquitectura inferida a partir del escaneo de carpetas
         mermaid_code = scanner.generate_mermaid_from_scan(scan_info)
 
-    # Determinar destino
     if not output_path:
         docs_dir = Path(project_path) / "docs"
         docs_dir.mkdir(parents=True, exist_ok=True)
@@ -123,7 +167,7 @@ def convertir_archivo_mermaid(input_file: str, output_path: str = "") -> str:
     else:
         out = Path(output_path).resolve()
 
-    return generar_diagrama_desde_mermaid(content, str(out), f"Diagrama — {inp.stem}")
+    return generar_diagrama_desde_mermaid(content, str(out), f"Diagrama · {inp.stem}")
 
 def main():
     mcp.run()
