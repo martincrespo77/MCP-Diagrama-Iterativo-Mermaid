@@ -4609,7 +4609,7 @@ function stepSeq(d){
 
 const $ = id => document.getElementById(id);
 const svg = $("svg"), vp = $("vp"), canvas = $("canvas"), panel = $("panel"), extra = $("extra"), legend = $("legend");
-const state = {tab:"casos", flow:"acortar", seq:"acortar", layers:new Set(Object.keys(LAYERS)), showCfg:false, sel:null, scn:null};
+const state = {tab:"casos", flow: Object.keys(FLOWS)[0] || null, seq: Object.keys(SEQS)[0] || null, layers:new Set(Object.keys(LAYERS)), showCfg:false, sel:null, scn:null};
 let cur = null;
 const view = {x:0, y:0, k:1};
 
@@ -4909,7 +4909,7 @@ function render(){
     const x0 = Math.min.apply(null, ucs.map(n => n.x - n.w/2)) - 22, x1 = Math.max.apply(null, ucs.map(n => n.x + n.w/2)) + 22;
     const y0 = Math.min.apply(null, ucs.map(n => n.y - n.h/2)) - 44, y1 = Math.max.apply(null, ucs.map(n => n.y + n.h/2)) + 22;
     mk("rect", {x:x0, y:y0, width:x1 - x0, height:y1 - y0, rx:14, "class":"boundary"}, eL);
-    txt(eL, x0 + 16, y0 + 22, "SISTEMA · LINK SHORTENER (ETAPA 1)", "boundary-label", "start");
+    txt(eL, x0 + 16, y0 + 22, "{{SYSTEM_BOUNDARY_LABEL}}", "boundary-label", "start");
     cur.size.W = Math.max(cur.size.W, x1 + 30); cur.size.H = Math.max(cur.size.H, y1 + 30);
     if (y0 < 0){ cur.size.top = y0 - 20; }
   }
@@ -5091,7 +5091,7 @@ function renderPanel(){
         (mem.length ? '<h3>Miembros</h3><pre class="members">' + esc(mem.join("\n")) + "</pre>" : "") +
         relationsHTML(d.id) + (d.refs ? "<h3>Referencias en contexto.md</h3>" + refsHTML(d.refs) : "");
     } else {
-      h = '<span class="kind">Diagrama de clases</span><h2>Capas y puntos de extensión</h2><p>Cada cosa que el Cliente podría cambiar está detrás de una interfaz del dominio. Un cambio en la Etapa 2 o 3 debería ser una clase nueva más configuración.</p><p class="note">El paquete raíz todavía no está decidido (E6). La recomendación es ar.edu.undef.fie.pp6.shortener.</p>' +
+      h = '{{CLASSES_OVERVIEW_HTML}}' +
         Object.keys(LAYERS).map(k => {
           const items = CLASSES.filter(c => c.layer === k);
           return '<div class="layer-h"><span class="dot" style="color:var(--' + k + ');background:var(--' + k + ')"></span>' + esc(LAYERS[k].long) + "</div><ul class=\"plist\">" +

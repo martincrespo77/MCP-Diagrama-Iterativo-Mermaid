@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import json
 from typing import Dict, List, Any, Optional
 
@@ -25,7 +25,9 @@ class UnifiedSuiteBundler:
         capas: Dict[str, Any],
         clases: List[Dict[str, Any]],
         aristas_clases: List[List[Any]],
-        secuencias: Dict[str, Any]
+        secuencias: Dict[str, Any],
+        system_boundary_label: str = "SISTEMA SECCAP",
+        classes_overview_html: str = '<span class="kind">Arquitectura del Sistema</span><h2>Capas y Componentes</h2><p>Estructura modular del sistema con separación estricta de responsabilidades.</p>'
     ) -> str:
         if not self.template_path.exists():
             raise FileNotFoundError(f"No se encontró el template en: {self.template_path}")
@@ -42,6 +44,8 @@ class UnifiedSuiteBundler:
         html = tpl.replace("{{PAGE_TITLE}}", titulo)
         html = html.replace("{{EYEBROW_TEXT}}", eyebrow)
         html = html.replace("{{MAIN_HEADING}}", titulo)
+        html = html.replace("{{SYSTEM_BOUNDARY_LABEL}}", system_boundary_label)
+        html = html.replace("{{CLASSES_OVERVIEW_HTML}}", classes_overview_html)
         html = html.replace("{{DATA_USE}}", data_use)
         html = html.replace("{{DATA_FLOWS}}", data_flows)
         html = html.replace("{{DATA_LAYERS}}", data_layers)
