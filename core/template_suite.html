@@ -4528,7 +4528,7 @@ function buildSeq(){
     } else if (s.t === "else"){
       y += 8; open[open.length - 1].elses.push({y:y, cond:s.l}); y += 24;
     } else if (s.t === "end"){
-      y += 8; const f = open.pop(); f.y1 = y;
+      y += 8; const f = open.pop(); if (f){ f.y1 = y; if (open.length){ const p = open[open.length - 1]; p.h = Math.max(p.h, f.h + 1); } }
       if (open.length){ const p = open[open.length - 1]; p.h = Math.max(p.h, f.h + 1); }
       y += 8;
     }
