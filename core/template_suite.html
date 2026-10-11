@@ -4442,6 +4442,8 @@ function buildUseCases(){
   return {nodes:nodes, edges:edges, size:size, boundary:true};
 }
 function buildFlow(key){
+  if (!key || !FLOWS[key]) key = Object.keys(FLOWS)[0];
+  state.flow = key;
   const fl = FLOWS[key], nodes = [], edges = [];
   fl.nodes.forEach(d => {
     const f = d.type === "term" ? F.term : F.sans;
@@ -4480,6 +4482,7 @@ function buildClasses(){
 }
 
 function buildSeq(){
+  if (!state.seq || !SEQS[state.seq]) state.seq = Object.keys(SEQS)[0];
   const S = SEQS[state.seq], n = S.parts.length, idx = {};
   S.parts.forEach((p, i) => { idx[p.id] = i; });
   const pw = S.parts.map(p => Math.max(tw(p.label, F.name) + 28, 120));
@@ -5036,6 +5039,7 @@ function nameOf(id){ const n = cur.map.get(id); return n ? (n.label || n.id) : i
 function renderPanel(){
   let h = "";
   if (state.tab === "secuencia"){
+    if (!state.seq || !SEQS[state.seq]) state.seq = Object.keys(SEQS)[0];
     const S = SEQS[state.seq], total = cur.nodes.length;
     const pl = id => S.parts.find(p => p.id === id).label;
     if (state.sel){
